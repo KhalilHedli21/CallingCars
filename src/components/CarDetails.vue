@@ -1,0 +1,99 @@
+<template>
+  <div class="car-details">
+    <h1>{{ car.make }} {{ car.model }}</h1>
+    <img :src="car.image || '/toyota.jpg'" :alt="car.make + ' ' + car.model" class="car-image">
+    <p><strong>Year:</strong> {{ car.year }}</p>
+    <p><strong>Price:</strong> {{ formatPrice(car.price) }}</p>
+    <p><strong>Mileage:</strong> {{ car.mileage.toLocaleString() }} km</p>
+    <p><strong>Fuel Type:</strong> {{ car.fuelType }}</p>
+    <p><strong>Transmission:</strong> {{ car.transmission }}</p>
+    <p><strong>Description:</strong> {{ car.description }}</p>
+    
+    <div class="comment-section">
+      <label for="comment"><strong>Add a comment:</strong></label>
+      <textarea 
+        id="comment"
+        v-model="comment" 
+        placeholder="Write your comment about this car..."
+        rows="4"
+        class="comment-textarea"
+      ></textarea>
+      <button @click="saveComment" class="save-comment-btn">Save Comment</button>
+    </div>
+    
+    <button @click="contactSeller">Contact Seller</button>
+  </div>
+</template>
+
+<script>
+export default {
+  props: ['car'],
+  data() {
+    return {
+      comment: ''
+    }
+  },
+  methods: {
+    formatPrice(price) {
+      return new Intl.NumberFormat('fr-DZ', { 
+        style: 'currency', 
+        currency: 'DZD',
+        maximumFractionDigits: 0
+      }).format(price || 0);
+    },
+    contactSeller() {
+      alert(`Contact seller for ${this.car.make} ${this.car.model}`);
+    },
+    saveComment() {
+      if (this.comment.trim()) {
+        // You can emit the comment to parent component or save to localStorage
+        this.$emit('comment-saved', { carId: this.car.id, comment: this.comment });
+        alert('Comment saved!');
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+.car-details {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.car-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.comment-section {
+  margin: 1.5rem 0;
+}
+
+.comment-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  font-family: inherit;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.save-comment-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.save-comment-btn:hover {
+  background-color: #45a049;
+}
+</style>
