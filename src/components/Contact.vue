@@ -2,7 +2,7 @@
   <div class="contact-container">
     <!-- Optional Banner Image -->
     <div class="contact-banner">
-      <img src="https://images.unsplash.com/photo-1581091226825-5a89e6d0e488" alt="Car Showroom Banner">
+      <img src="https://th.bing.com/th/id/OIP.KfnpT7fe7FMfeTmmPKvg5wHaEK?rs=1&pid=ImgDetMain" alt="Car Showroom Banner">
     </div>
     <div class="contact-content">
       <h1>Contact Us</h1>
@@ -16,8 +16,8 @@
             <i class="fas fa-phone"></i>
             <div>
               <h3>Phone</h3>
-              <p>+1 (555) 123-4567</p>
-              <p>+1 (555) 987-6543</p>
+              <p>+213 723-567</p>
+              <p>+213 555 987 654</p>
             </div>
           </div>
           <div class="info-item">

@@ -14,7 +14,7 @@ const routes = [
     component: Landing
   },
   {
-    path: '/', 
+    path: '/contact',
     name: 'Contact',
     component: Contact
   },

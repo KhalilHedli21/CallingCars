@@ -1,8 +1,13 @@
 <template>
   <div class="admin-users">
-    <h1>User Management</h1>
+    <h1 class="users-title">User Management</h1>
     <div class="user-actions">
-      <input v-model="search" type="text" placeholder="Search users by name or email..." class="search-input" />
+      <input
+        v-model="search"
+        type="text"
+        placeholder="Search users by name or email..."
+        class="search-input"
+      />
     </div>
     <table class="user-table">
       <thead>
@@ -16,29 +21,35 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="user in filteredUsers" :key="user.id">
+        <tr v-for="user in filteredUsers" :key="user.id" class="table-row">
           <td>{{ user.id }}</td>
           <td>{{ user.name }}</td>
           <td>{{ user.email }}</td>
           <td>{{ user.role }}</td>
           <td>
-            <span :class="['status', user.status]">{{ user.status }}</span>
+            <span :class="['status-badge', user.status === 'active' ? 'active' : 'inactive']">
+              {{ user.status }}
+            </span>
           </td>
-          <td>
-            <button class="edit-btn" @click="editUser(user)"><i class="fas fa-edit"></i></button>
-            <button class="delete-btn" @click="deleteUser(user)"><i class="fas fa-trash"></i></button>
+          <td class="actions">
+            <button @click="editUser(user)" class="action-button edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button @click="deleteUser(user)" class="action-button delete">
+              <i class="fas fa-trash"></i>
+            </button>
           </td>
         </tr>
         <tr v-if="filteredUsers.length === 0">
-          <td colspan="6" class="no-users">No users found.</td>
+          <td colspan="6" class="no-results">No users found.</td>
         </tr>
       </tbody>
     </table>
-    <!-- Edit Modal (placeholder) -->
-    <div v-if="showEditModal" class="modal-overlay">
+
+    <div v-if="showEditModal" class="modal">
       <div class="modal-content">
         <h2>Edit User</h2>
-        <form @submit.prevent="saveUser">
+        <form @submit.prevent="saveUser" class="modal-form">
           <div class="form-group">
             <label>Name</label>
             <input v-model="editUserData.name" type="text" required />
@@ -61,9 +72,9 @@
               <option value="inactive">Inactive</option>
             </select>
           </div>
-          <div class="modal-actions">
-            <button type="submit" class="save-btn">Save</button>
-            <button type="button" class="cancel-btn" @click="closeEditModal">Cancel</button>
+          <div class="modal-buttons">
+            <button type="submit">Save</button>
+            <button type="button" @click="closeEditModal">Cancel</button>
           </div>
         </form>
       </div>
@@ -72,8 +83,10 @@
 </template>
 
 <script>
-export default {
-  name: 'AdminUserManagment',
+import { defineComponent } from 'vue';
+
+export default defineComponent({
+  name: 'AdminUserManagement',
   data() {
     return {
       search: '',
@@ -84,204 +97,195 @@ export default {
         { id: 4, name: 'Diana King', email: 'diana@example.com', role: 'client', status: 'active' },
       ],
       showEditModal: false,
-      editUserData: {
-        id: null,
-        name: '',
-        email: '',
-        role: 'client',
-        status: 'active'
-      }
-    }
+      editUserData: { id: null, name: '', email: '', role: 'client', status: 'active' },
+    };
   },
   computed: {
     filteredUsers() {
-      if (!this.search) return this.users
-      const s = this.search.toLowerCase()
+      if (!this.search) return this.users;
+      const s = this.search.toLowerCase();
       return this.users.filter(u =>
-        u.name.toLowerCase().includes(s) ||
-        u.email.toLowerCase().includes(s)
-      )
-    }
+        u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s)
+      );
+    },
   },
   methods: {
     editUser(user) {
-      this.editUserData = { ...user }
-      this.showEditModal = true
+      this.editUserData = { ...user };
+      this.showEditModal = true;
     },
     saveUser() {
-      const idx = this.users.findIndex(u => u.id === this.editUserData.id)
+      const idx = this.users.findIndex(u => u.id === this.editUserData.id);
       if (idx !== -1) {
-        this.users[idx] = { ...this.editUserData }
+        this.users[idx] = { ...this.editUserData };
       }
-      this.closeEditModal()
+      this.closeEditModal();
     },
     deleteUser(user) {
       if (confirm(`Are you sure you want to delete ${user.name}?`)) {
-        this.users = this.users.filter(u => u.id !== user.id)
+        this.users = this.users.filter(u => u.id !== user.id);
       }
     },
     closeEditModal() {
-      this.showEditModal = false
-    }
-  }
-}
+      this.showEditModal = false;
+    },
+  },
+});
 </script>
 
 <style scoped>
 .admin-users {
-  padding: 2rem;
-  max-width: 1000px;
+  padding: 1.5rem;
+  max-width: 80rem;
   margin: 0 auto;
 }
-
-h1 {
-  color: #1a365d;
+.users-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #1f2937;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
-
 .user-actions {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
-
 .search-input {
-  padding: 0.5rem 1rem;
+  width: 33.333%;
+  padding: 0.5rem;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 1rem;
-  width: 300px;
-  max-width: 100%;
+  border-radius: 0.5rem;
+  outline: none;
 }
-
+.search-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
+}
 .user-table {
   width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border-radius: 12px;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
-
-.user-table th, .user-table td {
-  padding: 1rem;
-  text-align: left;
+.user-table thead {
+  background-color: #f3f4f6;
 }
-
 .user-table th {
-  background: #f1f5f9;
-  color: #1a365d;
+  padding: 0.75rem;
+  text-align: left;
+  color: #4b5563;
   font-weight: 600;
 }
-
-.user-table tr:not(:last-child) {
+.table-row {
   border-bottom: 1px solid #e5e7eb;
 }
-
-.status {
-  padding: 0.3rem 0.8rem;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #fff;
-  display: inline-block;
+.table-row:hover {
+  background-color: #f9fafb;
 }
-.status.active {
-  background: #4CAF50;
+.table-row td {
+  padding: 0.75rem;
 }
-.status.inactive {
-  background: #9ca3af;
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  color: white;
 }
-
-.edit-btn, .delete-btn {
+.active {
+  background-color: #10b981;
+}
+.inactive {
+  background-color: #6b7280;
+}
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.action-button {
   background: none;
   border: none;
+  color: #1f2937;
   cursor: pointer;
-  font-size: 1.1rem;
-  margin-right: 0.5rem;
-  color: #1a365d;
-  transition: color 0.2s;
+  font-size: 1rem;
 }
-.edit-btn:hover {
-  color: #4CAF50;
+.edit {
+  color: #3b82f6;
 }
-.delete-btn {
-  margin-right: 0;
+.edit:hover {
+  color: #2563eb;
 }
-.delete-btn:hover {
+.delete {
   color: #ef4444;
 }
-
-.no-users {
-  text-align: center;
-  color: #6b7280;
-  font-style: italic;
+.delete:hover {
+  color: #dc2626;
 }
-
-/* Modal Styles */
-.modal-overlay {
+.no-results {
+  text-align: center;
+  padding: 0.75rem;
+  color: #6b7280;
+}
+.modal {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.3);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 50;
 }
 .modal-content {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 12px;
-  min-width: 320px;
-  max-width: 90vw;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 50%;
+}
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 .form-group {
-  margin-bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
 }
 .form-group label {
-  display: block;
-  margin-bottom: 0.4rem;
-  color: #1a365d;
-  font-weight: 500;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: #1f2937;
 }
-.form-group input, .form-group select {
-  width: 100%;
-  padding: 0.6rem;
+.form-group input,
+.form-group select {
+  padding: 0.5rem;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: 0.5rem;
 }
-.modal-actions {
+.modal-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  margin-top: 1rem;
 }
-.save-btn {
-  background: #4CAF50;
-  color: #fff;
+.modal-buttons button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
 }
-.save-btn:hover {
-  background: #388e3c;
+.modal-buttons button:first-child {
+  background-color: #10b981;
+  color: white;
 }
-.cancel-btn {
-  background: #9ca3af;
-  color: #fff;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
+.modal-buttons button:first-child:hover {
+  background-color: #047857;
 }
-.cancel-btn:hover {
-  background: #6b7280;
+.modal-buttons button:last-child {
+  background-color: #6b7280;
+  color: white;
+}
+.modal-buttons button:last-child:hover {
+  background-color: #4b5563;
 }
 </style>

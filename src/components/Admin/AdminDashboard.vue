@@ -1,147 +1,133 @@
 <template>
   <div class="admin-dashboard">
-    <h1>Admin Dashboard</h1>
+    <h1 class="dashboard-title">Admin Dashboard</h1>
     <div class="dashboard-stats">
-      <div class="stat-card users">
-        <div class="stat-icon"><i class="fas fa-users"></i></div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background-color: #d1fae5;">
+          <i class="fas fa-users" style="color: #10b981;"></i>
+        </div>
         <div class="stat-info">
-          <h2>{{ stats.users }}</h2>
-          <p>Users</p>
+          <h2 class="stat-value">{{ stats.users }}</h2>
+          <p class="stat-label">Users</p>
         </div>
       </div>
-      <div class="stat-card cars">
-        <div class="stat-icon"><i class="fas fa-car"></i></div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background-color: #dbeafe;">
+          <i class="fas fa-car" style="color: #3b82f6;"></i>
+        </div>
         <div class="stat-info">
-          <h2>{{ stats.cars }}</h2>
-          <p>Car Listings</p>
+          <h2 class="stat-value">{{ stats.cars }}</h2>
+          <p class="stat-label">Car Listings</p>
         </div>
       </div>
-      <div class="stat-card orders">
-        <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background-color: #fefcbf;">
+          <i class="fas fa-shopping-cart" style="color: #f59e0b;"></i>
+        </div>
         <div class="stat-info">
-          <h2>{{ stats.orders }}</h2>
-          <p>Orders</p>
+          <h2 class="stat-value">{{ stats.orders }}</h2>
+          <p class="stat-label">Orders</p>
         </div>
       </div>
     </div>
     <div class="dashboard-links">
-      <router-link to="/admin/users" class="dashboard-link">
-        <i class="fas fa-users"></i> Manage Users
-      </router-link>
-      <router-link to="/admin/listings" class="dashboard-link">
-        <i class="fas fa-car"></i> Manage Car Listings
-      </router-link>
-      <router-link to="/admin/orders" class="dashboard-link">
-        <i class="fas fa-shopping-cart"></i> Manage Orders
-      </router-link>
+      <router-link to="/admin/users" class="dashboard-link">Manage Users</router-link>
+      <router-link to="/admin/listings" class="dashboard-link">Manage Car Listings</router-link>
+      <router-link to="/admin/orders" class="dashboard-link">Manage Orders</router-link>
     </div>
   </div>
 </template>
 
 <script>
-export default {
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'AdminDashboard',
   data() {
     return {
       stats: {
         users: 120,
         cars: 45,
-        orders: 32
-      }
-    }
-  }
-}
+        orders: 32,
+      },
+    };
+  },
+});
 </script>
 
 <style scoped>
 .admin-dashboard {
-  padding: 2rem;
-  max-width: 900px;
+  padding: 1.5rem;
+  max-width: 64rem;
   margin: 0 auto;
 }
-
-h1 {
-  color: #1a365d;
+.dashboard-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #1f2937;
   text-align: center;
+  margin-bottom: 1.5rem;
+}
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1.5rem;
   margin-bottom: 2rem;
 }
-
-.dashboard-stats {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  margin-bottom: 2.5rem;
+@media (min-width: 768px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
-
 .stat-card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  padding: 2rem 1.5rem;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  min-width: 180px;
   gap: 1rem;
 }
-
 .stat-icon {
-  font-size: 2.2rem;
-  color: #4CAF50;
-  background: #e6f4ea;
+  padding: 0.75rem;
   border-radius: 50%;
-  padding: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-
-.stat-info h2 {
-  margin: 0;
-  font-size: 2rem;
-  color: #1a365d;
+.stat-info {
+  flex-grow: 1;
 }
-
-.stat-info p {
-  margin: 0;
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+.stat-label {
   color: #6b7280;
-  font-size: 1rem;
 }
-
 .dashboard-links {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
 }
-
+@media (min-width: 768px) {
+  .dashboard-links {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 .dashboard-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: #1a365d;
-  color: #fff;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
+  justify-content: center;
+  background-color: #1f2937;
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
   text-decoration: none;
   font-weight: 500;
-  font-size: 1.1rem;
-  transition: background 0.2s;
 }
-
 .dashboard-link:hover {
-  background: #4CAF50;
-  color: #fff;
+  background-color: #111827;
 }
-
-@media (max-width: 700px) {
-  .dashboard-stats {
-    flex-direction: column;
-    gap: 1.5rem;
-    align-items: center;
-  }
-  .dashboard-links {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-  }
+.dashboard-link i {
+  margin-right: 0.5rem;
 }
 </style>
