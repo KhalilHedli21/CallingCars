@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="login-container">
     <div class="login-form">
@@ -64,6 +63,8 @@
           <span v-if="isLoading" class="loading-spinner"></span>
           <span v-else>Se connecter</span>
         </button>
+
+        <span class="error-message" v-if="errors.submit">{{ errors.submit }}</span>
 
         <div class="social-login">
           <p>Ou continuez avec</p>
@@ -145,10 +146,23 @@ export default {
       
       try {
         this.isLoading = true
+
+        // Log CSRF cookie request
+        console.log('Fetching CSRF cookie from:', axios.defaults.baseURL + '/sanctum/csrf-cookie')
+        await axios.get('/sanctum/csrf-cookie', {
+          withCredentials: true
+        })
+        console.log('CSRF cookie fetched successfully')
+
+        // Log login request
+        console.log('Sending login request to:', axios.defaults.baseURL + '/api/login')
         const response = await axios.post('/api/login', {
           email: this.email,
           password: this.password
+        }, {
+          withCredentials: true
         })
+        console.log('Login response:', response)
 
         const { token, user } = response.data
         
@@ -170,7 +184,16 @@ export default {
       } catch (error) {
         console.error('Erreur de connexion:', error)
         if (error.response) {
-          this.errors.submit = error.response.data.message || 'Échec de la connexion. Veuillez réessayer.'
+          console.log('Error response:', error.response)
+          if (error.response.status === 419) {
+            this.errors.submit = 'Erreur de validation CSRF. Veuillez réessayer.'
+          } else if (error.response.status === 401) {
+            this.errors.submit = 'Identifiants invalides. Veuillez vérifier votre email et mot de passe.'
+          } else if (error.response.status === 404) {
+            this.errors.submit = 'L\'endpoint de connexion n\'a pas été trouvé. Veuillez vérifier la configuration du serveur.'
+          } else {
+            this.errors.submit = error.response.data.message || 'Échec de la connexion. Veuillez réessayer.'
+          }
         } else {
           this.errors.submit = 'Erreur réseau. Veuillez vérifier votre connexion.'
         }
@@ -457,4 +480,3 @@ export default {
   }
 }
 </style>
-

@@ -13,7 +13,6 @@
 
       <ul class="nav-links" :class="{ 'is-active': isMobileMenuOpen }">
         <li><router-link to="/" @click="closeMobileMenu">Accueil</router-link></li>
-        <li><router-link to="/cars" @click="closeMobileMenu">Voitures à vendre</router-link></li>
         
         <!-- Navigation Admin -->
         <template v-if="userType === 'user' && userRole === 'admin'">
@@ -82,7 +81,6 @@ export default {
     }
   },
   mounted() {
-    // Fermer le menu mobile lors d'un clic à l'extérieur
     document.addEventListener('click', (e) => {
       const target = e.target
       if (!target.closest('.nav') && this.isMobileMenuOpen) {
@@ -98,18 +96,19 @@ export default {
 
 <style scoped>
 .nav {
-  background: #fff;
-  color: #1a365d;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  color: #1e293b;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .nav-container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.25rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -121,56 +120,75 @@ export default {
 }
 
 .nav-logo img {
-  height: 40px;
-  transition: transform 0.3s ease;
+  height: 48px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .nav-logo img:hover {
-  transform: scale(1.05);
+  transform: scale(1.08);
+  opacity: 0.9;
 }
 
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 1.5rem;
+  gap: 2rem;
   align-items: center;
   margin: 0;
   padding: 0;
 }
 
 .nav-links a {
-  color: #1a365d;
+  color: #1e293b;
   text-decoration: none;
-  font-weight: 500;
-  padding: 0.5rem;
-  border-radius: 4px;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .nav-links a:hover {
-  background: #f1f5f9;
-  color: #4CAF50;
-  text-decoration: none;
+  background: #e2e8f0;
+  color: #2563eb;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background: #2563eb;
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
 }
 
 .signup-button {
-  background: #4CAF50;
-  color: #fff !important;
-  padding: 0.5rem 1rem !important;
+  background: #2563eb;
+  color: #ffffff !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .signup-button:hover {
-  background: #45a049 !important;
-  color: #fff !important;
+  background: #1d4ed8 !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 
 .logout-button {
-  color: #ef4444 !important;
+  color: #dc2626 !important;
 }
 
 .logout-button:hover {
-  background: #ffeaea !important;
-  color: #ef4444 !important;
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
 }
 
 .mobile-menu-button {
@@ -183,29 +201,31 @@ export default {
 
 .hamburger {
   display: block;
-  width: 24px;
-  height: 2px;
-  background: #1a365d;
+  width: 28px;
+  height: 3px;
+  background: #1e293b;
   position: relative;
   transition: all 0.3s ease;
+  border-radius: 2px;
 }
 
 .hamburger::before,
 .hamburger::after {
   content: '';
   position: absolute;
-  width: 24px;
-  height: 2px;
-  background: #1a365d;
+  width: 28px;
+  height: 3px;
+  background: #1e293b;
   transition: all 0.3s ease;
+  border-radius: 2px;
 }
 
 .hamburger::before {
-  top: -8px;
+  top: -9px;
 }
 
 .hamburger::after {
-  bottom: -8px;
+  bottom: -9px;
 }
 
 .hamburger.is-active {
@@ -233,10 +253,12 @@ export default {
     top: 100%;
     left: 0;
     right: 0;
-    background: #fff;
+    background: #ffffff;
     flex-direction: column;
-    padding: 1rem;
-    gap: 1rem;
+    padding: 1.5rem;
+    gap: 1.25rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-in-out;
   }
 
   .nav-links.is-active {
@@ -244,15 +266,26 @@ export default {
   }
 
   .nav-links a {
-    display: block;
-    padding: 0.75rem;
+    padding: 1rem;
     text-align: center;
-    color: #1a365d;
+    font-size: 1.1rem;
+    border-radius: 6px;
   }
 
   .nav-links a:hover {
     background: #f1f5f9;
-    color: #4CAF50;
+    color: #2563eb;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 }
 </style>
