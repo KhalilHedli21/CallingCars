@@ -14,17 +14,19 @@
     <section class="featured-cars">
       <h2>Annonces en Vedette</h2>
       <div class="car-grid">
-        <div v-for="car in featuredCars" :key="car.id" class="car-card">
-          <div class="car-image-container">
-            <img :src="car.image" :alt="car.make + ' ' + car.model" class="car-image">
-            <span class="car-year">{{ car.year }}</span>
+        <router-link v-for="car in featuredCars" :key="car.id" :to="'/car/' + car.id" class="car-card-link">
+          <div class="car-card">
+            <div class="car-image-container">
+              <img :src="car.image" :alt="car.make + ' ' + car.model" class="car-image">
+              <span class="car-year">{{ car.year }}</span>
+            </div>
+            <div class="car-details">
+              <h3>{{ car.make }} {{ car.model }}</h3>
+              <p class="car-price">{{ formatPrice(car.price) }}</p>
+              <p class="car-mileage">{{ car.mileage.toLocaleString('fr-FR') }} km</p>
+            </div>
           </div>
-          <div class="car-details">
-            <h3>{{ car.make }} {{ car.model }}</h3>
-            <p class="car-price">{{ formatPrice(car.price) }}</p>
-            <p class="car-mileage">{{ car.mileage.toLocaleString('fr-FR') }} km</p>
-          </div>
-        </div>
+        </router-link>
       </div>
     </section>
 
@@ -64,7 +66,15 @@ export default {
           year: 2025,
           price: 10500000,
           mileage: 1000,
-          image: 'https://media.ed.edmunds-media.com/tesla/model-s/2025/oem/2025_tesla_model-s_sedan_plaid_fq_oem_1_1600.jpg'
+          image: 'https://media.ed.edmunds-media.com/tesla/model-s/2025/oem/2025_tesla_model-s_sedan_plaid_fq_oem_1_1600.jpg',
+          fuelType: 'Electric',
+          transmission: 'Automatic',
+          description: 'Luxury electric sedan with impressive range and performance.',
+          engineSize: null,
+          horsepower: 1020,
+          color: 'Red',
+          topSpeed: 322,
+          acceleration: 1.99
         },
         {
           id: 2,
@@ -73,7 +83,15 @@ export default {
           year: 2025,
           price: 7200000,
           mileage: 2000,
-          image: 'https://th.bing.com/th/id/OIP.JW9zqTIFt7_LCR4t0KbRIAHaEL?rs=1&pid=ImgDetMain'
+          image: 'https://th.bing.com/th/id/OIP.JW9zqTIFt7_LCR4t0KbRIAHaEL?rs=1&pid=ImgDetMain',
+          fuelType: 'Electric',
+          transmission: 'Automatic',
+          description: 'Sporty electric sedan with sleek design.',
+          engineSize: null,
+          horsepower: 536,
+          color: 'Blue',
+          topSpeed: 225,
+          acceleration: 3.9
         },
         {
           id: 3,
@@ -82,7 +100,83 @@ export default {
           year: 2025,
           price: 9500000,
           mileage: 1500,
-          image: 'https://th.bing.com/th/id/OIP.DIZCLouZUNmSbdpO-PSl7wHaEK?rs=1&pid=ImgDetMain'
+          image: 'https://th.bing.com/th/id/OIP.DIZCLouZUNmSbdpO-PSl7wHaEK?rs=1&pid=ImgDetMain',
+          fuelType: 'Electric',
+          transmission: 'Automatic',
+          description: 'Premium electric SUV with advanced technology.',
+          engineSize: null,
+          horsepower: 658,
+          color: 'Black',
+          topSpeed: 210,
+          acceleration: 4.1
+        },
+        {
+          id: 4,
+          make: 'Toyota',
+          model: 'Corolla',
+          year: 2024,
+          price: 3500000,
+          mileage: 5000,
+          image: 'https://th.bing.com/th/id/OIP.QI00zXvsyyKUw1YO4iReGgHaEn?rs=1&pid=ImgDetMain',
+          fuelType: 'Petrol',
+          transmission: 'Manual',
+          description: 'Reliable compact sedan with excellent fuel efficiency.',
+          engineSize: 1.8,
+          horsepower: 139,
+          color: 'Silver',
+          topSpeed: 190,
+          acceleration: 9.1
+        },
+        {
+          id: 5,
+          make: 'Hyundai',
+          model: 'Tucson',
+          year: 2024,
+          price: 4800000,
+          mileage: 3000,
+          image: 'https://th.bing.com/th/id/R.5f4d56188f67694f39e956821344b6f4?rik=KTdp7JfYtbxLEw&pid=ImgRaw&r=0',
+          fuelType: 'Hybrid',
+          transmission: 'Automatic',
+          description: 'Modern SUV with hybrid efficiency and bold styling.',
+          engineSize: 1.6,
+          horsepower: 230,
+          color: 'White',
+          topSpeed: 193,
+          acceleration: 8.0
+        },
+        {
+          id: 6,
+          make: 'Audi',
+          model: 'Q5',
+          year: 2025,
+          price: 6500000,
+          mileage: 1200,
+          image: 'https://media.ed.edmunds-media.com/audi/q5/2025/oem/2025_audi_q5_4dr-suv_prestige-s-line_fq_oem_1_1600.jpg',
+          fuelType: 'Petrol',
+          transmission: 'Automatic',
+          description: 'Luxury compact SUV with refined performance.',
+          engineSize: 2.0,
+          horsepower: 261,
+          color: 'Grey',
+          topSpeed: 210,
+          acceleration: 5.7
+        },
+        {
+          id: 7,
+          make: 'Volkswagen',
+          model: 'Golf',
+          year: 2024,
+          price: 4200000,
+          mileage: 4000,
+          image: 'https://th.bing.com/th/id/OIP.B7uSn6-mEKNRJ4MQQup3TgHaFj?rs=1&pid=ImgDetMain',
+          fuelType: 'Petrol',
+          transmission: 'Manual',
+          description: 'Iconic hatchback with sporty handling.',
+          engineSize: 2.0,
+          horsepower: 241,
+          color: 'Red',
+          topSpeed: 250,
+          acceleration: 6.2
         }
       ]
     };
@@ -182,6 +276,11 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
+}
+
+.car-card-link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .car-card {

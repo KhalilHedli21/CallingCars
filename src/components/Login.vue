@@ -155,8 +155,8 @@ export default {
         console.log('CSRF cookie fetched successfully')
 
         // Log login request
-        console.log('Sending login request to:', axios.defaults.baseURL + '/api/login')
-        const response = await axios.post('/api/login', {
+        console.log('Sending login request to:', axios.defaults.baseURL + '/login')
+        const response = await axios.post('/login', {
           email: this.email,
           password: this.password
         }, {

@@ -21,16 +21,27 @@
       <button @click="saveComment" class="save-comment-btn">Save Comment</button>
     </div>
     
-    <button @click="contactSeller">Contact Seller</button>
+    <button @click="showDetailsModal = true" class="show-details-btn">Show Details</button>
+
+    <!-- Modal for additional details -->
+    <CarDetailsModal 
+      v-if="showDetailsModal" 
+      :car="car" 
+      @close="showDetailsModal = false"
+    />
   </div>
 </template>
 
 <script>
+import CarDetailsModal from './CarDetailsModal.vue';
+
 export default {
+  components: { CarDetailsModal },
   props: ['car'],
   data() {
     return {
-      comment: ''
+      comment: '',
+      showDetailsModal: false
     }
   },
   methods: {
@@ -41,14 +52,11 @@ export default {
         maximumFractionDigits: 0
       }).format(price || 0);
     },
-    contactSeller() {
-      alert(`Contact seller for ${this.car.make} ${this.car.model}`);
-    },
     saveComment() {
       if (this.comment.trim()) {
-        // You can emit the comment to parent component or save to localStorage
         this.$emit('comment-saved', { carId: this.car.id, comment: this.comment });
         alert('Comment saved!');
+        this.comment = ''; // Clear comment after saving
       }
     }
   }
@@ -95,5 +103,18 @@ export default {
 
 .save-comment-btn:hover {
   background-color: #45a049;
+}
+
+.show-details-btn {
+  background-color: #2196F3;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.show-details-btn:hover {
+  background-color: #1e88e5;
 }
 </style>
