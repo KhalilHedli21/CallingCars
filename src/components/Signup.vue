@@ -110,6 +110,8 @@
           <span v-else>Créer un compte</span>
         </button>
 
+        <span class="error-message" v-if="errors.submit">{{ errors.submit }}</span>
+
         <div class="social-signup">
           <p>Ou inscrivez-vous avec</p>
           <div class="social-buttons">
@@ -135,6 +137,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import axios from 'axios'
 
 interface FormErrors {
   name?: string;
@@ -236,13 +239,62 @@ export default defineComponent({
       
       try {
         this.isLoading = true
-        await this.$emit('signup', {
+        delete this.errors.submit
+
+        console.log('Sending registration request to:', axios.defaults.baseURL + '/register')
+        const response = await axios.post('/register', {
           name: this.name,
           email: this.email,
-          password: this.password
+          password: this.password,
+          password_confirmation: this.confirmPassword
+        }, {
+          withCredentials: true
         })
+
+        console.log('Registration successful:', response.data)
+        
+        // Show success message or emit success event
+        this.$emit('signup-success', {
+          message: 'Compte créé avec succès! Veuillez vous connecter.',
+          user: response.data.data?.user
+        })
+
+        // Navigate to login page
+        this.$router.push({
+          path: '/login',
+          query: { 
+            message: 'Compte créé avec succès! Veuillez vous connecter.',
+            email: this.email
+          }
+        })
+        
       } catch (error) {
         console.error('Erreur d\'inscription:', error)
+        if (error.response) {
+          console.log('Error response:', error.response)
+          if (error.response.status === 422) {
+            // Validation errors
+            const validationErrors = error.response.data.errors
+            if (validationErrors) {
+              if (validationErrors.email) {
+                this.errors.email = validationErrors.email[0]
+              }
+              if (validationErrors.password) {
+                this.errors.password = validationErrors.password[0]
+              }
+              if (validationErrors.name) {
+                this.errors.name = validationErrors.name[0]
+              }
+            }
+            this.errors.submit = error.response.data.message || 'Erreur de validation. Veuillez vérifier vos informations.'
+          } else if (error.response.status === 409) {
+            this.errors.submit = 'Un compte avec cette adresse email existe déjà.'
+          } else {
+            this.errors.submit = error.response.data.message || 'Échec de l\'inscription. Veuillez réessayer.'
+          }
+        } else {
+          this.errors.submit = 'Erreur réseau. Veuillez vérifier votre connexion.'
+        }
       } finally {
         this.isLoading = false
       }

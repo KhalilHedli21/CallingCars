@@ -148,11 +148,11 @@ export default {
         this.isLoading = true
 
         // Log CSRF cookie request
-        console.log('Fetching CSRF cookie from:', axios.defaults.baseURL + '/sanctum/csrf-cookie')
-        await axios.get('/sanctum/csrf-cookie', {
-          withCredentials: true
-        })
-        console.log('CSRF cookie fetched successfully')
+        // console.log('Fetching CSRF cookie from:', axios.defaults.baseURL + '/sanctum/csrf-cookie')
+        // await axios.get('/sanctum/csrf-cookie', {
+        //   withCredentials: true
+        // })
+        // console.log('CSRF cookie fetched successfully')
 
         // Log login request
         console.log('Sending login request to:', axios.defaults.baseURL + '/login')
@@ -162,9 +162,11 @@ export default {
         }, {
           withCredentials: true
         })
-        console.log('Login response:', response)
 
-        const { token, user } = response.data
+        const { token, user } = response.data.data
+
+        console.log('Login successful:', { token, user });
+        
         
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))

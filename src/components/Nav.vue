@@ -15,14 +15,14 @@
         <li><router-link to="/" @click="closeMobileMenu">Accueil</router-link></li>
         
         <!-- Navigation Admin -->
-        <template v-if="userType === 'user' && userRole === 'admin'">
+        <template v-if="isLoggedIn && currentUserRole === 'admin'">
           <li><router-link to="/admin/dashboard" @click="closeMobileMenu">Tableau de bord</router-link></li>
           <li><router-link to="/admin/users" @click="closeMobileMenu">Utilisateurs</router-link></li>
           <li><router-link to="/admin/listings" @click="closeMobileMenu">Annonces</router-link></li>
         </template>
         
         <!-- Navigation Client -->
-        <template v-if="userType === 'user' && userRole === 'client'">
+        <template v-if="isLoggedIn && currentUserRole === 'client'">
           <li><router-link to="/sell" @click="closeMobileMenu">Vendre votre voiture</router-link></li>
           <li><router-link to="/profile" @click="closeMobileMenu">Profil</router-link></li>
         </template>
@@ -30,13 +30,13 @@
         <li><router-link to="/contact" @click="closeMobileMenu">Contact</router-link></li>
         
         <!-- Navigation Invité -->
-        <template v-if="userType === 'guest'">
+        <template v-if="!isLoggedIn">
           <li><router-link to="/login" @click="closeMobileMenu">Se connecter</router-link></li>
           <li><router-link to="/signup" @click="closeMobileMenu" class="signup-button">S'inscrire</router-link></li>
         </template>
         
         <!-- Actions Utilisateur Connecté -->
-        <template v-if="userType === 'user'">
+        <template v-if="isLoggedIn">
           <li><a href="#" @click.prevent="handleLogout" class="logout-button">Se déconnecter</a></li>
         </template>
       </ul>
@@ -45,33 +45,63 @@
 </template>
 
 <script>
+import axios from 'axios'
 export default {
   name: 'NavBar',
-  props: {
-    userType: {
-      type: String,
-      required: true,
-      validator: (value) => ['guest', 'user'].includes(value)
-    },
-    userRole: {
-      type: String,
-      default: null,
-      validator: (value) => ['admin', 'client', null].includes(value)
-    },
-    isLoading: {
-      type: Boolean,
-      default: false
-    }
-  },
   data() {
     return {
-      isMobileMenuOpen: false
+      isMobileMenuOpen: false,
+      currentUser: null
+    }
+  },
+  computed: {
+    isLoggedIn() {
+      return !!this.currentUser && !!localStorage.getItem('token')
+    },
+    currentUserRole() {
+      return this.currentUser?.role || null
     }
   },
   methods: {
-    handleLogout() {
+    checkLoginStatus() {
+      const token = localStorage.getItem('token')
+      const userData = localStorage.getItem('user')
+      
+      if (token && userData) {
+        try {
+          this.currentUser = JSON.parse(userData)
+          // Set axios header if not already set
+          if (!axios.defaults.headers.common['Authorization']) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error)
+          this.clearUserData()
+        }
+      } else {
+        this.currentUser = null
+      }
+    },
+    clearUserData() {
+      this.currentUser = null
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      delete axios.defaults.headers.common['Authorization']
+    },
+    async handleLogout() {
       this.closeMobileMenu()
-      this.$emit('logout')
+      try {
+        await axios.post('/logout')
+        this.clearUserData()
+        this.$router.push('/login')
+        this.$emit('logout-success')
+      } catch (error) {
+        console.error('Logout error:', error)
+        // Clear local data even if logout request fails
+        this.clearUserData()
+        this.$router.push('/login')
+        this.$emit('logout-success')
+      }
     },
     toggleMobileMenu() {
       this.isMobileMenuOpen = !this.isMobileMenuOpen
@@ -81,6 +111,7 @@ export default {
     }
   },
   mounted() {
+    this.checkLoginStatus()
     document.addEventListener('click', (e) => {
       const target = e.target
       if (!target.closest('.nav') && this.isMobileMenuOpen) {

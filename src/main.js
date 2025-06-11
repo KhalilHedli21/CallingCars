@@ -4,7 +4,7 @@ import router from './router'
 import axios from 'axios'
 
 // Configure Axios
-axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.baseURL = 'http://localhost:8000/api'
 axios.defaults.withCredentials = true
 
 const app = createApp(App)
