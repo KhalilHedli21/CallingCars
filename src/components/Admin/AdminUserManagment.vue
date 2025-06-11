@@ -1,50 +1,88 @@
 <template>
   <div class="admin-users">
     <h1 class="users-title">User Management</h1>
-    <div class="user-actions">
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Search users by name or email..."
-        class="search-input"
-      />
+    <div v-if="isLoading" class="loading">Loading users...</div>
+    <div v-else-if="errorMessage" class="error">{{ errorMessage }}</div>
+    <div v-else>
+      <div class="user-actions">
+        <input v-model="search" type="text" placeholder="Search users by name or email..." class="search-input" />
+        <button @click="openAddModal" class="add-button">Add New User</button>
+      </div>
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in filteredUsers" :key="user.id" class="table-row">
+            <td>{{ user.id }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+              <span :class="['status-badge', user.status === 'active' ? 'active' : 'inactive']">
+                {{ user.status }}
+              </span>
+            </td>
+            <td class="actions">
+              <button @click="editUser(user)" class="action-button edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button @click="deleteUser(user)" class="action-button delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr v-if="filteredUsers.length === 0">
+            <td colspan="6" class="no-results">No users found.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <table class="user-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="user in filteredUsers" :key="user.id" class="table-row">
-          <td>{{ user.id }}</td>
-          <td>{{ user.name }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ user.role }}</td>
-          <td>
-            <span :class="['status-badge', user.status === 'active' ? 'active' : 'inactive']">
-              {{ user.status }}
-            </span>
-          </td>
-          <td class="actions">
-            <button @click="editUser(user)" class="action-button edit">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button @click="deleteUser(user)" class="action-button delete">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-        <tr v-if="filteredUsers.length === 0">
-          <td colspan="6" class="no-results">No users found.</td>
-        </tr>
-      </tbody>
-    </table>
+
+    <div v-if="showAddModal" class="modal">
+      <div class="modal-content">
+        <h3>Add New User</h3>
+        <form @submit.prevent="addUser" class="modal-form">
+          <div class="form-group">
+            <label>Name</label>
+            <input v-model="newUser.name" type="text" required />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input v-model="newUser.email" type="email" required />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input v-model="newUser.password" type="password" required />
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select v-model="newUser.role">
+              <option value="admin">Admin</option>
+              <option value="client">Client</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select v-model="newUser.status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="modal-buttons">
+            <button type="submit">Add User</button>
+            <button type="button" @click="showAddModal = false">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <div v-if="showEditModal" class="modal">
       <div class="modal-content">
@@ -84,20 +122,20 @@
 
 <script>
 import { defineComponent } from 'vue';
+import axios from 'axios';
 
 export default defineComponent({
   name: 'AdminUserManagement',
   data() {
     return {
       search: '',
-      users: [
-        { id: 1, name: 'Alice Smith', email: 'alice@example.com', role: 'admin', status: 'active' },
-        { id: 2, name: 'Bob Johnson', email: 'bob@example.com', role: 'client', status: 'inactive' },
-        { id: 3, name: 'Charlie Lee', email: 'charlie@example.com', role: 'client', status: 'active' },
-        { id: 4, name: 'Diana King', email: 'diana@example.com', role: 'client', status: 'active' },
-      ],
+      users: [],
       showEditModal: false,
+      showAddModal: false,
       editUserData: { id: null, name: '', email: '', role: 'client', status: 'active' },
+      newUser: { name: '', email: '', password: '', role: 'client', status: 'active' },
+      isLoading: false,
+      errorMessage: null,
     };
   },
   computed: {
@@ -109,21 +147,76 @@ export default defineComponent({
       );
     },
   },
+  mounted() {
+    this.fetchUsers();
+  },
   methods: {
+    async fetchUsers() {
+      this.isLoading = true;
+      try {
+        const response = await axios.get('/api/users', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        this.users = response.data;
+      } catch (error) {
+        this.errorMessage = 'Failed to fetch users.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    openAddModal() {
+      this.newUser = { name: '', email: '', password: '', role: 'client', status: 'active' };
+      this.showAddModal = true;
+    },
+    async addUser() {
+      this.isLoading = true;
+      try {
+        const response = await axios.post('/api/users', this.newUser, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        this.users.push(response.data);
+        this.showAddModal = false;
+      } catch (error) {
+        this.errorMessage = 'Failed to add user.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
     editUser(user) {
       this.editUserData = { ...user };
       this.showEditModal = true;
     },
-    saveUser() {
-      const idx = this.users.findIndex(u => u.id === this.editUserData.id);
-      if (idx !== -1) {
-        this.users[idx] = { ...this.editUserData };
+    async saveUser() {
+      this.isLoading = true;
+      try {
+        await axios.put(`/api/users/${this.editUserData.id}`, this.editUserData, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        this.fetchUsers();
+        this.closeEditModal();
+      } catch (error) {
+        this.errorMessage = 'Failed to save user.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
       }
-      this.closeEditModal();
     },
-    deleteUser(user) {
+    async deleteUser(user) {
       if (confirm(`Are you sure you want to delete ${user.name}?`)) {
-        this.users = this.users.filter(u => u.id !== user.id);
+        this.isLoading = true;
+        try {
+          await axios.delete(`/api/users/${user.id}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          });
+          this.fetchUsers();
+        } catch (error) {
+          this.errorMessage = 'Failed to delete user.';
+          console.error(error);
+        } finally {
+          this.isLoading = false;
+        }
       }
     },
     closeEditModal() {
@@ -146,9 +239,18 @@ export default defineComponent({
   text-align: center;
   margin-bottom: 1.5rem;
 }
+.loading,
+.error {
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+.error {
+  color: #ef4444;
+}
 .user-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: 1.5rem;
 }
 .search-input {
@@ -161,6 +263,17 @@ export default defineComponent({
 .search-input:focus {
   border-color: #10b981;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
+}
+.add-button {
+  background-color: #10b981;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+}
+.add-button:hover {
+  background-color: #047857;
 }
 .user-table {
   width: 100%;

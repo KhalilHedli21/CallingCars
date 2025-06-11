@@ -56,8 +56,7 @@
           </div>
           <p class="car-description">{{ car.description || 'Aucune description disponible' }}</p>
           <div class="car-actions">
-            <button class="contact-button" @click="contactSeller(car)">Contacter le vendeur</button>
-            <button class="details-button" @click="viewDetails(car)">Détails</button>
+            <button class="order-button" @click="orderCar(car)">Commander voiture</button>
           </div>
         </div>
       </div>
@@ -344,16 +343,6 @@ export default {
         maximumFractionDigits: 0
       }).format(price || 0);
     },
-    contactSeller(car) {
-      if (this.userType === 'guest') {
-        alert(`Veuillez vous inscrire pour contacter le vendeur à propos de cette ${car.make} ${car.model}`);
-      } else {
-        alert(`Contactez le vendeur à propos de ${car.make} ${car.model}`);
-      }
-    },
-    viewDetails(car) {
-      this.$emit('view-details', car);
-    },
     toggleFavorite(car) {
       if (this.userType === 'guest') {
         alert('Veuillez vous inscrire pour sauvegarder des favoris');
@@ -382,21 +371,18 @@ export default {
       if (this.currentPage > 1) {
         this.currentPage--;
       }
+    },
+    orderCar(car) {
+      this.$router.push({ 
+        name: 'OrderForm', 
+        params: { 
+          carId: car.id, 
+          make: car.make, 
+          model: car.model 
+        } 
+      });
     }
   }
-  // Comment out API call for now, using sample data
-  /*
-  async mounted() {
-    try {
-      const response = await axios.get('http://localhost:8000/api/cars');
-      this.cars = response.data;
-      this.loading = false;
-    } catch (error) {
-      this.error = 'Impossible de charger les voitures. Veuillez réessayer plus tard.';
-      this.loading = false;
-    }
-  }
-  */
 }
 </script>
 
@@ -576,7 +562,7 @@ export default {
   gap: 0.5rem;
 }
 
-.contact-button {
+.order-button {
   flex: 1;
   padding: 0.75rem;
   background-color: #4299e1;
@@ -587,23 +573,8 @@ export default {
   cursor: pointer;
 }
 
-.contact-button:hover {
+.order-button:hover {
   background-color: #3182ce;
-}
-
-.details-button {
-  flex: 1;
-  padding: 0.75rem;
-  background-color: white;
-  color: #4299e1;
-  border: 1px solid #4299e1;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.details-button:hover {
-  background-color: #f0f7ff;
 }
 
 .pagination {

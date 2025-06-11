@@ -1,65 +1,69 @@
 <template>
   <div class="car-management">
     <h2 class="management-title">Car Management</h2>
-    <div class="controls">
-      <input
-        v-model="searchTerm"
-        @input="debouncedSearch"
-        placeholder="Search cars..."
-        class="search-input"
-      />
-      <button @click="openAddModal" class="add-button">Add New Car</button>
+    <div v-if="isLoading" class="loading">Loading cars...</div>
+    <div v-else-if="errorMessage" class="error">{{ errorMessage }}</div>
+    <div v-else>
+      <div class="controls">
+        <input
+          v-model="searchTerm"
+          @input="debouncedSearch"
+          placeholder="Search cars..."
+          class="search-input"
+        />
+        <button @click="openAddModal" class="add-button">Add New Car</button>
+      </div>
+      <table v-if="filteredCars.length" class="car-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Owner</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="car in filteredCars" :key="car.id" class="table-row">
+            <td>{{ car.id }}</td>
+            <td>{{ car.make }}</td>
+            <td>{{ car.model }}</td>
+            <td>{{ car.owner }}</td>
+            <td>{{ car.status }}</td>
+            <td class="actions">
+              <button
+                v-if="car.status === 'pending'"
+                @click="approveCar(car.id)"
+                class="action-button approve"
+              >
+                Approve
+              </button>
+              <button
+                v-if="car.status === 'pending'"
+                @click="rejectCar(car.id)"
+                class="action-button reject"
+              >
+                Reject
+              </button>
+              <button
+                @click="editCar(car)"
+                class="action-button edit"
+              >
+                Edit
+              </button>
+              <button
+                @click="deleteCar(car.id)"
+                class="action-button delete"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="no-results">No car listings found.</p>
     </div>
-    <table v-if="filteredCars.length" class="car-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Make</th>
-          <th>Model</th>
-          <th>Owner</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="car in filteredCars" :key="car.id" class="table-row">
-          <td>{{ car.id }}</td>
-          <td>{{ car.make }}</td>
-          <td>{{ car.model }}</td>
-          <td>{{ car.owner }}</td>
-          <td>{{ car.status }}</td>
-          <td class="actions">
-            <button
-              v-if="car.status === 'pending'"
-              @click="approveCar(car.id)"
-              class="action-button approve"
-            >
-              Approve
-            </button>
-            <button
-              v-if="car.status === 'pending'"
-              @click="rejectCar(car.id)"
-              class="action-button reject"
-            >
-              Reject
-            </button>
-            <button
-              @click="editCar(car)"
-              class="action-button edit"
-            >
-              Edit
-            </button>
-            <button
-              @click="deleteCar(car.id)"
-              class="action-button delete"
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-else class="no-results">No car listings found.</p>
 
     <div v-if="showAddModal" class="modal">
       <div class="modal-content">
@@ -133,19 +137,11 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue';
-import { useStore } from 'pinia';
-import { debounce } from 'lodash';
+import { defineComponent } from 'vue';
 import axios from 'axios';
 
-export default {
-  components: {
-    AdminDashboard: defineAsyncComponent(() => import('./AdminDashboard.vue')),
-  },
-  setup() {
-    const store = useStore();
-    return { store };
-  },
+export default defineComponent({
+  name: 'AdminCarManagement',
   data() {
     return {
       cars: [],
@@ -157,14 +153,17 @@ export default {
       previewImage: null,
       isLoading: false,
       errorMessage: null,
+      debounceTimeout: null,
     };
   },
   computed: {
     filteredCars() {
+      if (!this.searchTerm) return this.cars;
+      const term = this.searchTerm.toLowerCase();
       return this.cars.filter(car =>
-        car.make.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        car.model.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        car.owner.toLowerCase().includes(this.searchTerm.toLowerCase())
+        car.make.toLowerCase().includes(term) ||
+        car.model.toLowerCase().includes(term) ||
+        car.owner.toLowerCase().includes(term)
       );
     },
   },
@@ -172,19 +171,19 @@ export default {
     this.fetchCars();
   },
   methods: {
-    fetchCars() {
+    async fetchCars() {
       this.isLoading = true;
-      axios.get('/api/cars', { headers: { Authorization: `Bearer ${this.store.token}` } })
-        .then(response => {
-          this.cars = response.data;
-        })
-        .catch(error => {
-          this.errorMessage = 'Failed to fetch cars. Please try again.';
-          console.error('Error fetching cars:', error);
-        })
-        .finally(() => {
-          this.isLoading = false;
+      try {
+        const response = await axios.get('/api/cars', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
+        this.cars = response.data;
+      } catch (error) {
+        this.errorMessage = 'Failed to fetch cars.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
     },
     handleImageUpload(event) {
       const file = event.target.files[0];
@@ -195,62 +194,68 @@ export default {
         alert('Please upload a valid image (max 5MB)');
       }
     },
-    approveCar(id) {
+    async approveCar(id) {
       this.isLoading = true;
-      axios.put(`/api/cars/${id}`, { status: 'approved' }, { headers: { Authorization: `Bearer ${this.store.token}` } })
-        .then(() => this.fetchCars())
-        .catch(error => {
-          this.errorMessage = 'Failed to approve car.';
-          console.error(error);
-        })
-        .finally(() => {
-          this.isLoading = false;
+      try {
+        await axios.put(`/api/cars/${id}`, { status: 'approved' }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
+        this.fetchCars();
+      } catch (error) {
+        this.errorMessage = 'Failed to approve car.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
     },
-    rejectCar(id) {
+    async rejectCar(id) {
       this.isLoading = true;
-      axios.put(`/api/cars/${id}`, { status: 'rejected' }, { headers: { Authorization: `Bearer ${this.store.token}` } })
-        .then(() => this.fetchCars())
-        .catch(error => {
-          this.errorMessage = 'Failed to reject car.';
-          console.error(error);
-        })
-        .finally(() => {
-          this.isLoading = false;
+      try {
+        await axios.put(`/api/cars/${id}`, { status: 'rejected' }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
+        this.fetchCars();
+      } catch (error) {
+        this.errorMessage = 'Failed to reject car.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
     },
     editCar(car) {
       this.selectedCar = { ...car };
       this.showEditModal = true;
     },
-    saveCar() {
+    async saveCar() {
       this.isLoading = true;
-      axios.put(`/api/cars/${this.selectedCar.id}`, this.selectedCar, { headers: { Authorization: `Bearer ${this.store.token}` } })
-        .then(() => {
-          this.fetchCars();
-          this.showEditModal = false;
-          this.selectedCar = null;
-        })
-        .catch(error => {
-          this.errorMessage = 'Failed to save car.';
-          console.error(error);
-        })
-        .finally(() => {
-          this.isLoading = false;
+      try {
+        await axios.put(`/api/cars/${this.selectedCar.id}`, this.selectedCar, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
+        this.fetchCars();
+        this.showEditModal = false;
+        this.selectedCar = null;
+      } catch (error) {
+        this.errorMessage = 'Failed to save car.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
     },
-    deleteCar(id) {
+    async deleteCar(id) {
       if (confirm('Are you sure you want to delete this car?')) {
         this.isLoading = true;
-        axios.delete(`/api/cars/${id}`, { headers: { Authorization: `Bearer ${this.store.token}` } })
-          .then(() => this.fetchCars())
-          .catch(error => {
-            this.errorMessage = 'Failed to delete car.';
-            console.error(error);
-          })
-          .finally(() => {
-            this.isLoading = false;
+        try {
+          await axios.delete(`/api/cars/${id}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           });
+          this.fetchCars();
+        } catch (error) {
+          this.errorMessage = 'Failed to delete car.';
+          console.error(error);
+        } finally {
+          this.isLoading = false;
+        }
       }
     },
     openAddModal() {
@@ -258,32 +263,40 @@ export default {
       this.previewImage = null;
       this.showAddModal = true;
     },
-    addCar() {
+    async addCar() {
       this.isLoading = true;
-      const formData = new FormData();
-      for (let key in this.newCar) formData.append(key, this.newCar[key]);
-      axios.post('/api/cars', formData, {
-        headers: { Authorization: `Bearer ${this.store.token}`, 'Content-Type': 'multipart/form-data' },
-      })
-        .then(response => {
-          this.cars.push(response.data);
-          this.showAddModal = false;
-          this.newCar = { make: '', model: '', owner: '', status: 'pending', image: null };
-          this.previewImage = null;
-        })
-        .catch(error => {
-          this.errorMessage = 'Failed to add car.';
-          console.error(error);
-        })
-        .finally(() => {
-          this.isLoading = false;
+      try {
+        const formData = new FormData();
+        for (let key in this.newCar) {
+          if (this.newCar[key]) formData.append(key, this.newCar[key]);
+        }
+        await axios.post('/api/cars', formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data',
+          },
         });
+        this.fetchCars();
+        this.showAddModal = false;
+        this.newCar = { make: '', model: '', owner: '', status: 'pending', image: null };
+        this.previewImage = null;
+      } catch (error) {
+        this.errorMessage = 'Failed to add car.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
     },
-    debouncedSearch: debounce(function() {
-      this.fetchCars();
-    }, 300),
+    debouncedSearch() {
+      if (this.debounceTimeout) {
+        clearTimeout(this.debounceTimeout);
+      }
+      this.debounceTimeout = setTimeout(() => {
+        this.fetchCars();
+      }, 300);
+    },
   },
-};
+});
 </script>
 
 <style scoped>
@@ -297,6 +310,15 @@ export default {
   font-weight: bold;
   color: #1f2937;
   margin-bottom: 1rem;
+}
+.loading,
+.error {
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+.error {
+  color: #ef4444;
 }
 .controls {
   display: flex;

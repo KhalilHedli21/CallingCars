@@ -1,7 +1,10 @@
 <template>
   <div class="admin-dashboard">
     <h1 class="dashboard-title">Admin Dashboard</h1>
-    <div class="dashboard-stats">
+    <h2 class="welcome-message">Welcome, Admin!</h2>
+    <div v-if="isLoading" class="loading">Loading stats...</div>
+    <div v-else-if="errorMessage" class="error">{{ errorMessage }}</div>
+    <div v-else class="dashboard-stats">
       <div class="stat-card">
         <div class="stat-icon" style="background-color: #d1fae5;">
           <i class="fas fa-users" style="color: #10b981;"></i>
@@ -40,17 +43,39 @@
 
 <script>
 import { defineComponent } from 'vue';
+import axios from 'axios';
 
 export default defineComponent({
   name: 'AdminDashboard',
   data() {
     return {
       stats: {
-        users: 120,
-        cars: 45,
-        orders: 32,
+        users: 0,
+        cars: 0,
+        orders: 0,
       },
+      isLoading: false,
+      errorMessage: null,
     };
+  },
+  mounted() {
+    this.fetchStats();
+  },
+  methods: {
+    async fetchStats() {
+      this.isLoading = true;
+      try {
+        const response = await axios.get('/api/stats', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        this.stats = response.data; // Expect { users: number, cars: number, orders: number }
+      } catch (error) {
+        this.errorMessage = 'Failed to fetch stats.';
+        console.error(error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
   },
 });
 </script>
@@ -68,6 +93,20 @@ export default defineComponent({
   text-align: center;
   margin-bottom: 1.5rem;
 }
+.welcome-message {
+  text-align: center;
+  color: #4b5563;
+  margin-bottom: 1rem;
+}
+.loading,
+.error {
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+.error {
+  color: #ef4444;
+}
 .dashboard-stats {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
@@ -80,13 +119,17 @@ export default defineComponent({
   }
 }
 .stat-card {
-  background-color: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   padding: 1rem;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   gap: 1rem;
+  transition: transform 0.2s ease;
+}
+.stat-card:hover {
+  transform: translateY(-5px);
 }
 .stat-icon {
   padding: 0.75rem;
@@ -126,8 +169,5 @@ export default defineComponent({
 }
 .dashboard-link:hover {
   background-color: #111827;
-}
-.dashboard-link i {
-  margin-right: 0.5rem;
 }
 </style>
