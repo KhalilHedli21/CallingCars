@@ -12,27 +12,27 @@
       </button>
 
       <ul class="nav-links" :class="{ 'is-active': isMobileMenuOpen }">
-        <li><router-link to="/" @click="closeMobileMenu">Accueil</router-link></li>
+        <!-- Navigation Invité (non-logged-in users) -->
+        <template v-if="!isLoggedIn">
+          <li><router-link to="/" @click="closeMobileMenu">Accueil</router-link></li>
+          <li><router-link to="/contact" @click="closeMobileMenu">Contact</router-link></li>
+          <li><router-link to="/login" @click="closeMobileMenu">Se connecter</router-link></li>
+          <li><router-link to="/signup" @click="closeMobileMenu" class="signup-button">S'inscrire</router-link></li>
+        </template>
         
         <!-- Navigation Admin -->
         <template v-if="isLoggedIn && currentUserRole === 'admin'">
           <li><router-link to="/admin/dashboard" @click="closeMobileMenu">Tableau de bord</router-link></li>
           <li><router-link to="/admin/users" @click="closeMobileMenu">Utilisateurs</router-link></li>
           <li><router-link to="/admin/listings" @click="closeMobileMenu">Annonces</router-link></li>
+          <li><router-link to="/admin/orders" @click="closeMobileMenu">Commandes</router-link></li>
         </template>
         
         <!-- Navigation Client -->
         <template v-if="isLoggedIn && currentUserRole === 'client'">
           <li><router-link to="/sell" @click="closeMobileMenu">Vendre votre voiture</router-link></li>
+          <li><router-link to="/order" @click="closeMobileMenu">Commander une voiture</router-link></li>
           <li><router-link to="/profile" @click="closeMobileMenu">Profil</router-link></li>
-        </template>
-        
-        <li><router-link to="/contact" @click="closeMobileMenu">Contact</router-link></li>
-        
-        <!-- Navigation Invité -->
-        <template v-if="!isLoggedIn">
-          <li><router-link to="/login" @click="closeMobileMenu">Se connecter</router-link></li>
-          <li><router-link to="/signup" @click="closeMobileMenu" class="signup-button">S'inscrire</router-link></li>
         </template>
         
         <!-- Actions Utilisateur Connecté -->
@@ -70,7 +70,6 @@ export default {
       if (token && userData) {
         try {
           this.currentUser = JSON.parse(userData)
-          // Set axios header if not already set
           if (!axios.defaults.headers.common['Authorization']) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
           }
@@ -91,13 +90,12 @@ export default {
     async handleLogout() {
       this.closeMobileMenu()
       try {
-        await axios.post('/logout')
+        await axios.post('/api/logout')
         this.clearUserData()
         this.$router.push('/login')
         this.$emit('logout-success')
       } catch (error) {
         console.error('Logout error:', error)
-        // Clear local data even if logout request fails
         this.clearUserData()
         this.$router.push('/login')
         this.$emit('logout-success')

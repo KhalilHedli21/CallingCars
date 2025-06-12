@@ -12,7 +12,6 @@ import AdminCarManagement from './components/Admin/AdminCarManagment.vue';
 import AdminOrders from './components/Admin/AdminOrders.vue';
 import OrderForm from './components/OrderForm.vue';
 import axios from 'axios';
-import path from 'path';
 
 const routes = [
   {
@@ -21,8 +20,8 @@ const routes = [
     component: Landing,
   },
   {
-    path:'/',
-    name:'OrderForm',
+    path: '/order',
+    name: 'OrderForm',
     component: OrderForm,
   },
   {
@@ -58,9 +57,9 @@ const routes = [
     props: true,
   },
   {
-    path: '/admin',
+    path: '/Admin',
     name: 'Admin',
-    component: { template: '' },
+    component: { template: '<router-view></router-view>' },
     meta: { requiresAuth: true, requiresAdmin: true },
     children: [
       {
