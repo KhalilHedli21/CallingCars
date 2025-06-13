@@ -1,70 +1,58 @@
 <template>
   <div class="admin-dashboard">
-    <h1>Admin Dashboard</h1>
-    <p>Welcome, Admin! Here is an overview of the platform's current status.</p>
-    <div class="dashboard-stats">
-      <div class="stat-card">
-        <h2>{{ totalUsers }}</h2>
-        <p>Total Users</p>
-      </div>
-      <div class="stat-card">
-        <h2>{{ totalCars }}</h2>
-        <p>Total Car Listings</p>
-      </div>
-      <div class="stat-card">
-        <h2>{{ pendingApprovals }}</h2>
-        <p>Pending Approvals</p>
-      </div>
-    </div>
+    <h1>Tableau de bord Administrateur</h1>
+    <p>Bienvenue sur le tableau de bord. Voici un aperçu des statistiques :</p>
+    <ul>
+      <li>Utilisateurs totaux : 150</li>
+      <li>Annonces actives : 45</li>
+      <li>Commandes en attente : 12</li>
+    </ul>
+    <!-- Add actual data fetching or components here -->
   </div>
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
-  data() {
-    return {
-      totalUsers: 0,
-      totalCars: 0,
-      pendingApprovals: 0
-    };
-  },
+  name: 'AdminDashboard',
   mounted() {
-    this.fetchStats();
-  },
-  methods: {
-    async fetchStats() {
-      try {
-        const response = await axios.get('/api/admin/stats', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        this.totalUsers = response.data.totalUsers;
-        this.totalCars = response.data.totalCars;
-        this.pendingApprovals = response.data.pendingApprovals;
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    }
+    // Placeholder for API call (e.g., /api/admin/stats)
+    // Replace with actual implementation
+    console.log('Admin Dashboard mounted');
+    // Example: fetch data
+    // async fetchStats() {
+    //   try {
+    //     const response = await axios.get('/api/admin/stats');
+    //     this.stats = response.data;
+    //   } catch (error) {
+    //     console.error('Error fetching stats:', error);
+    //   }
+    // }
   }
-};
+}
 </script>
 
 <style scoped>
 .admin-dashboard {
   padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.dashboard-stats {
-  display: flex;
-  gap: 1rem;
+.admin-dashboard h1 {
+  color: #1a365d;
+  margin-bottom: 1.5rem;
 }
 
-.stat-card {
-  background: white;
+.admin-dashboard ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.admin-dashboard li {
+  background: #f8fafc;
   padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  color: #1e293b;
 }
 </style>

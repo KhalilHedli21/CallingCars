@@ -45,17 +45,18 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Nav from './components/Nav.vue';
 import Footer from './components/Footer.vue';
-import Contact from './components/Contact.vue'; // Import Contact.vue
+import Contact from './components/Contact.vue';
+import axios from 'axios';
 
 export default {
   components: {
     Nav,
     Footer,
-    Contact, // Register Contact
+    Contact,
   },
   setup() {
     // State
@@ -64,15 +65,52 @@ export default {
     const errorMessage = ref(null);
     const router = useRouter();
 
+    // New function to check authentication and role from localStorage
+    const checkAuthAndRole = () => {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      if (token && user) {
+        try {
+          const userData = JSON.parse(user);
+          if (userData.role === 'admin') {
+            userType.value = 'admin';
+          } else {
+            userType.value = 'user';
+          }
+        } catch (e) {
+          console.error("Error parsing user data from localStorage:", e);
+          userType.value = 'guest';
+        }
+      } else {
+        userType.value = 'guest';
+      }
+    };
+
+    onMounted(() => {
+      checkAuthAndRole(); // Check authentication and role when the component is mounted
+    });
+
     // Methods
     const handleLogin = async (credentials) => {
       try {
         isLoading.value = true;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        userType.value = 'user';
-        router.push('/home');
+        // Actual API call to login endpoint
+        const response = await axios.post('/login', credentials);
+        const { token, user } = response.data; // Assuming your API returns token and user object
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        if (user.role === 'admin') {
+          userType.value = 'admin';
+          router.push('/admin/dashboard'); // Redirect to admin dashboard
+        } else {
+          userType.value = 'user';
+          router.push('/home'); // Redirect to home for regular users
+        }
       } catch (error) {
-        handleError('Login failed. Please try again.');
+        console.error('Login failed:', error);
+        handleError(error.response?.data?.message || 'Login failed. Please check your credentials.');
       } finally {
         isLoading.value = false;
       }
@@ -81,19 +119,42 @@ export default {
     const handleSignup = async (userData) => {
       try {
         isLoading.value = true;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        userType.value = 'user';
-        router.push('/home');
+        // Actual API call to signup endpoint
+        const response = await axios.post('/register', userData);
+        const { token, user } = response.data; // Assuming your API returns token and user object
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        if (user.role === 'admin') { // This might be less common for signup, but handling it
+          userType.value = 'admin';
+          router.push('/admin/dashboard');
+        } else {
+          userType.value = 'user';
+          router.push('/home');
+        }
       } catch (error) {
-        handleError('Signup failed. Please try again.');
+        console.error('Signup failed:', error);
+        handleError(error.response?.data?.message || 'Signup failed. Please try again.');
       } finally {
         isLoading.value = false;
       }
     };
 
-    const handleLogout = () => {
-      userType.value = 'guest';
-      router.push('/');
+    const handleLogout = async () => {
+      try {
+        // API call to logout endpoint
+        await axios.post('/logout', {}, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+      } catch (error) {
+        console.error('Logout failed:', error);
+      } finally {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        userType.value = 'guest';
+        router.push('/');
+      }
     };
 
     const showSignup = () => {

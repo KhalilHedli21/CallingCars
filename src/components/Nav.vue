@@ -2,9 +2,9 @@
   <nav class="nav" :class="{ 'nav-mobile': isMobileMenuOpen }">
     <div class="nav-container">
       <div class="nav-logo">
-        <router-link to="/">
+        <a href="#" @click.prevent="refreshPage">
           <img src="https://static.vecteezy.com/system/resources/previews/013/923/543/original/blue-car-logo-png.png" alt="Logo Vendeur de Voitures" />
-        </router-link>
+        </a>
       </div>
       
       <button class="mobile-menu-button" @click="toggleMobileMenu" aria-label="Basculer le menu">
@@ -26,17 +26,13 @@
           <li><router-link to="/admin/users" @click="closeMobileMenu">Utilisateurs</router-link></li>
           <li><router-link to="/admin/listings" @click="closeMobileMenu">Annonces</router-link></li>
           <li><router-link to="/admin/orders" @click="closeMobileMenu">Commandes</router-link></li>
+          <li><a href="#" @click.prevent="handleLogout" class="logout-button">Se déconnecter</a></li>
         </template>
         
         <!-- Navigation Client -->
         <template v-if="isLoggedIn && currentUserRole === 'client'">
-          <li><router-link to="/sell" @click="closeMobileMenu">Vendre votre voiture</router-link></li>
           <li><router-link to="/order" @click="closeMobileMenu">Commander une voiture</router-link></li>
           <li><router-link to="/profile" @click="closeMobileMenu">Profil</router-link></li>
-        </template>
-        
-        <!-- Actions Utilisateur Connecté -->
-        <template v-if="isLoggedIn">
           <li><a href="#" @click.prevent="handleLogout" class="logout-button">Se déconnecter</a></li>
         </template>
       </ul>
@@ -63,6 +59,9 @@ export default {
     }
   },
   methods: {
+    refreshPage() {
+      window.location.reload();
+    },
     checkLoginStatus() {
       const token = localStorage.getItem('token')
       const userData = localStorage.getItem('user')
