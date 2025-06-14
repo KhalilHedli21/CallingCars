@@ -168,7 +168,7 @@ export default {
       this.isLoading = true;
       this.errorMessage = null;
       try {
-        const response = await axios.get(`/api/admin/users?page=${page}`, {
+        const response = await axios.get(`/admin/users?page=${page}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         this.users = response.data.data;

@@ -22,9 +22,9 @@
         <select id="status-filter" v-model="statusFilter" @change="filterOrders">
           <option value="all">Tous</option>
           <option value="pending">En attente</option>
-          <option value="processing">En cours</option>
-          <option value="completed">Complété</option>
+          <option value="confirmed">Confirmé</option>
           <option value="cancelled">Annulé</option>
+          <option value="completed">Terminé</option>
         </select>
       </div>
       <div class="filter-group">
@@ -49,49 +49,56 @@
           <tr>
             <th>ID</th>
             <th>Client</th>
-            <th>Véhicule</th>
-            <th>Total</th>
-            <th>Date</th>
+            <th>Voiture</th>
+            <th>Prix Total</th>
             <th>Statut</th>
+            <th>Date</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="order in paginatedOrders" :key="order.id">
             <td>#{{ order.id }}</td>
-            <td>{{ order.user ? order.user.name : 'N/A' }}</td>
-            <td>{{ order.car ? `${order.car.make} ${order.car.model}` : 'N/A' }}</td>
-            <td>{{ order.total_price }} €</td>
-            <td>{{ formatDate(order.order_date) }}</td>
             <td>
-              <select 
-                v-model="order.status"
-                @change="updateStatus(order)"
-                :disabled="isLoading"
-                class="status-select"
-              >
-                <option value="pending">En attente</option>
-                <option value="processing">En cours</option>
-                <option value="completed">Complété</option>
-                <option value="cancelled">Annulé</option>
-              </select>
+              <div>{{ order.fullname }}</div>
+              <div class="text-sm text-gray-500">{{ order.email }}</div>
+              <div class="text-sm text-gray-500">{{ order.phone }}</div>
             </td>
-            <td class="actions-cell">
-              <router-link 
-                :to="`/order/${order.id}`"
-                class="action-button view"
-                title="Voir"
-                aria-label="Voir la commande"
-              >
-                <i class="fas fa-eye"></i>
-              </router-link>
+            <td>
+              <div>{{ order.car?.brand }} {{ order.car?.model }}</div>
+              <div class="text-sm text-gray-500">Année: {{ order.car?.year }}</div>
+            </td>
+            <td>{{ formatPrice(order.total_price) }}</td>
+            <td>
+              <span :class="['status-badge', order.status]">
+                {{ getStatusLabel(order.status) }}
+              </span>
+            </td>
+            <td>{{ formatDate(order.created_at) }}</td>
+            <td class="actions">
               <button 
-                @click="confirmDelete(order.id)"
-                class="action-button delete"
-                title="Supprimer"
-                aria-label="Supprimer la commande"
+                v-if="order.status === 'pending'"
+                @click="updateOrderStatus(order.id, 'confirmed')"
+                class="action-button confirm"
+                title="Confirmer"
               >
-                <i class="fas fa-trash"></i>
+                <i class="fas fa-check"></i>
+              </button>
+              <button 
+                v-if="order.status === 'confirmed'"
+                @click="updateOrderStatus(order.id, 'completed')"
+                class="action-button complete"
+                title="Marquer comme terminé"
+              >
+                <i class="fas fa-flag-checkered"></i>
+              </button>
+              <button 
+                v-if="['pending', 'confirmed'].includes(order.status)"
+                @click="updateOrderStatus(order.id, 'cancelled')"
+                class="action-button cancel"
+                title="Annuler"
+              >
+                <i class="fas fa-times"></i>
               </button>
             </td>
           </tr>
@@ -136,6 +143,7 @@
 import axios from 'axios';
 
 export default {
+  name: 'AdminOrders',
   data() {
     return {
       orders: [],
@@ -150,6 +158,7 @@ export default {
       showDeleteModal: false,
       orderToDelete: null,
       totalItems: 0,
+      updateInterval: null,
     };
   },
   computed: {
@@ -162,13 +171,17 @@ export default {
   },
   mounted() {
     this.fetchOrders();
+    this.startRealTimeUpdates();
+  },
+  beforeUnmount() {
+    this.stopRealTimeUpdates();
   },
   methods: {
     async fetchOrders(page = 1) {
       this.isLoading = true;
       this.errorMessage = null;
       try {
-        const response = await axios.get(`/api/admin/orders?page=${page}`, {
+        const response = await axios.get('/admin/orders', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         this.orders = response.data.data;
@@ -177,8 +190,8 @@ export default {
         this.currentPage = response.data.current_page;
         this.filterOrders();
       } catch (error) {
-        this.errorMessage = 'Échec du chargement des commandes. Veuillez réessayer.';
         console.error('Error fetching orders:', error);
+        this.errorMessage = 'Erreur lors du chargement des commandes';
       } finally {
         this.isLoading = false;
       }
@@ -222,28 +235,43 @@ export default {
 
       const query = this.searchQuery.toLowerCase();
       this.filteredOrders = this.orders.filter(order => 
-        (order.user && order.user.name.toLowerCase().includes(query)) || 
-        (order.car && `${order.car.make} ${order.car.model}`.toLowerCase().includes(query)) ||
+        (order.fullname && order.fullname.toLowerCase().includes(query)) || 
+        (order.car && `${order.car.brand} ${order.car.model}`.toLowerCase().includes(query)) ||
         order.id.toString().includes(query)
       );
     },
-    formatDate(dateString) {
-      const options = { year: 'numeric', month: 'short', day: 'numeric' };
-      return new Date(dateString).toLocaleDateString(undefined, options);
+    formatPrice(price) {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR'
+      }).format(price);
     },
-    async updateStatus(order) {
+    formatDate(date) {
+      return new Date(date).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    },
+    async updateOrderStatus(orderId, newStatus) {
       try {
-        await axios.put(`/api/admin/orders/${order.id}`, { 
-          status: order.status, 
-          total_price: order.total_price 
-        }, {
+        await axios.put(`/admin/orders/${orderId}`, { status: newStatus }, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        alert('Statut de la commande mis à jour avec succès');
+        await this.fetchOrders();
       } catch (error) {
-        this.errorMessage = 'Échec de la mise à jour du statut de la commande. Veuillez réessayer.';
         console.error('Error updating order status:', error);
+        alert('Erreur lors de la mise à jour du statut de la commande');
       }
+    },
+    getStatusLabel(status) {
+      const labels = {
+        pending: 'En attente',
+        confirmed: 'Confirmé',
+        cancelled: 'Annulé',
+        completed: 'Terminé'
+      };
+      return labels[status] || status;
     },
     confirmDelete(orderId) {
       this.orderToDelete = orderId;
@@ -255,7 +283,7 @@ export default {
     },
     async deleteOrder() {
       try {
-        await axios.delete(`/api/admin/orders/${this.orderToDelete}`, {
+        await axios.delete(`/admin/orders/${this.orderToDelete}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         alert('Commande supprimée avec succès');
@@ -276,6 +304,18 @@ export default {
     prevPage() {
       if (this.currentPage > 1) {
         this.fetchOrders(this.currentPage - 1);
+      }
+    },
+    // Add real-time update method
+    startRealTimeUpdates() {
+      // Poll for updates every 30 seconds
+      this.updateInterval = setInterval(() => {
+        this.fetchOrders(this.currentPage);
+      }, 30000);
+    },
+    stopRealTimeUpdates() {
+      if (this.updateInterval) {
+        clearInterval(this.updateInterval);
       }
     }
   }
@@ -383,12 +423,32 @@ tr:hover {
   background-color: #f8f9fa;
 }
 
-.status-select {
-  padding: 0.25rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  background-color: white;
-  font-size: 0.875rem;
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.confirmed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .actions-cell {
@@ -412,14 +472,19 @@ tr:hover {
   transform: scale(1.1);
 }
 
-.action-button.view {
-  background-color: #ebf8ff;
-  color: #3182ce;
+.action-button.confirm {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
-.action-button.delete {
-  background-color: #fff5f5;
-  color: #e53e3e;
+.action-button.complete {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.action-button.cancel {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .pagination {
@@ -527,6 +592,14 @@ tr:hover {
   border: none;
   border-radius: 0.25rem;
   cursor: pointer;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-gray-500 {
+  color: #6b7280;
 }
 
 @media (max-width: 768px) {

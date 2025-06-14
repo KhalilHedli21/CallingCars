@@ -165,6 +165,7 @@ export default {
       showDeleteModal: false,
       carToDelete: null,
       totalItems: 0,
+      updateInterval: null,
     };
   },
   computed: {
@@ -177,13 +178,17 @@ export default {
   },
   mounted() {
     this.fetchCars();
+    this.startRealTimeUpdates();
+  },
+  beforeUnmount() {
+    this.stopRealTimeUpdates();
   },
   methods: {
     async fetchCars(page = 1) {
       this.isLoading = true;
       this.errorMessage = null;
       try {
-        const response = await axios.get(`/api/admin/cars?page=${page}`, {
+        const response = await axios.get(`/admin/cars?page=${page}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         this.cars = response.data.data;
@@ -240,26 +245,42 @@ export default {
     },
     async approveCar(carId) {
       try {
-        await axios.put(`/api/admin/cars/${carId}/approve`, {}, {
+        await axios.put(`/admin/cars/${carId}/approve`, {}, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        console.log('Car approved successfully');
+        
+        this.$emit('show-notification', {
+          type: 'success',
+          message: 'Annonce approuvée avec succès'
+        });
+        
         this.fetchCars(this.currentPage);
       } catch (error) {
-        this.errorMessage = 'Échec de l\'approbation de l\'annonce. Veuillez réessayer.';
         console.error('Error approving car:', error);
+        this.$emit('show-notification', {
+          type: 'error',
+          message: 'Erreur lors de l\'approbation de l\'annonce'
+        });
       }
     },
     async rejectCar(carId) {
       try {
-        await axios.put(`/api/admin/cars/${carId}/reject`, {}, {
+        await axios.put(`/admin/cars/${carId}/reject`, {}, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        console.log('Car rejected successfully');
+        
+        this.$emit('show-notification', {
+          type: 'success',
+          message: 'Annonce rejetée avec succès'
+        });
+        
         this.fetchCars(this.currentPage);
       } catch (error) {
-        this.errorMessage = 'Échec du rejet de l\'annonce. Veuillez réessayer.';
         console.error('Error rejecting car:', error);
+        this.$emit('show-notification', {
+          type: 'error',
+          message: 'Erreur lors du rejet de l\'annonce'
+        });
       }
     },
     editCar(carId) {
@@ -275,14 +296,22 @@ export default {
     },
     async deleteCar() {
       try {
-        await axios.delete(`/api/admin/cars/${this.carToDelete}`, {
+        await axios.delete(`/admin/cars/${this.carToDelete}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        console.log('Car deleted successfully');
+        
+        this.$emit('show-notification', {
+          type: 'success',
+          message: 'Annonce supprimée avec succès'
+        });
+        
         this.fetchCars(this.currentPage);
       } catch (error) {
-        this.errorMessage = 'Échec de la suppression de l\'annonce. Veuillez réessayer.';
         console.error('Error deleting car:', error);
+        this.$emit('show-notification', {
+          type: 'error',
+          message: 'Erreur lors de la suppression de l\'annonce'
+        });
       } finally {
         this.showDeleteModal = false;
         this.carToDelete = null;
@@ -304,6 +333,16 @@ export default {
     prevPage() {
       if (this.currentPage > 1) {
         this.fetchCars(this.currentPage - 1);
+      }
+    },
+    startRealTimeUpdates() {
+      this.updateInterval = setInterval(() => {
+        this.fetchCars(this.currentPage);
+      }, 30000);
+    },
+    stopRealTimeUpdates() {
+      if (this.updateInterval) {
+        clearInterval(this.updateInterval);
       }
     }
   }

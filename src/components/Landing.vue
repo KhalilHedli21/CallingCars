@@ -14,19 +14,17 @@
     <section class="featured-cars">
       <h2>Annonces en Vedette</h2>
       <div class="car-grid">
-        <router-link v-for="car in featuredCars" :key="car.id" :to="'/car/' + car.id" class="car-card-link">
-          <div class="car-card">
-            <div class="car-image-container">
-              <img :src="car.image" :alt="car.make + ' ' + car.model" class="car-image">
-              <span class="car-year">{{ car.year }}</span>
-            </div>
-            <div class="car-details">
-              <h3>{{ car.make }} {{ car.model }}</h3>
-              <p class="car-price">{{ formatPrice(car.price) }}</p>
-              <p class="car-mileage">{{ car.mileage.toLocaleString('fr-FR') }} km</p>
-            </div>
+        <div v-for="car in featuredCars" :key="car.id" class="car-card" @click="handleCarClick(car)">
+          <div class="car-image-container">
+            <img :src="car.image" :alt="car.make + ' ' + car.model" class="car-image">
+            <span class="car-year">{{ car.year }}</span>
           </div>
-        </router-link>
+          <div class="car-details">
+            <h3>{{ car.make }} {{ car.model }}</h3>
+            <p class="car-price">{{ formatPrice(car.price) }}</p>
+            <p class="car-mileage">{{ car.mileage.toLocaleString('fr-FR') }} km</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -50,6 +48,28 @@
         </div>
       </div>
     </section>
+
+    <!-- Add this modal component -->
+    <div v-if="showAuthModal" class="modal-overlay">
+      <div class="modal">
+        <h2>Bienvenue sur notre plateforme</h2>
+        <p>Pour explorer nos voitures en détail, vous pouvez :</p>
+        <div class="modal-actions">
+          <router-link to="/signup" class="action-button primary">
+            <i class="fas fa-user-plus"></i>
+            Créer un compte
+          </router-link>
+          <router-link to="/login" class="action-button secondary">
+            <i class="fas fa-sign-in-alt"></i>
+            Se connecter
+          </router-link>
+          <button @click="continueAsGuest" class="action-button guest">
+            <i class="fas fa-user"></i>
+            Explorer en tant qu'invité
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -178,7 +198,9 @@ export default {
           topSpeed: 250,
           acceleration: 6.2
         }
-      ]
+      ],
+      showAuthModal: false,
+      selectedCar: null
     };
   },
   methods: {
@@ -188,6 +210,22 @@ export default {
         currency: 'DZD',
         maximumFractionDigits: 0
       }).format(price);
+    },
+    handleCarClick(car) {
+      // Check if user is logged in
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.selectedCar = car;
+        this.showAuthModal = true;
+      } else {
+        // If logged in, proceed to car details
+        this.$router.push(`/car/${car.id}`);
+      }
+    },
+    continueAsGuest() {
+      this.showAuthModal = false;
+      // Navigate to Home.vue instead of car details
+      this.$router.push('/home');
     }
   }
 };
@@ -278,17 +316,13 @@ export default {
   gap: 2rem;
 }
 
-.car-card-link {
-  text-decoration: none;
-  color: inherit;
-}
-
 .car-card {
   background: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   transition: transform 0.3s;
+  cursor: pointer;
 }
 
 .car-card:hover {
@@ -365,5 +399,85 @@ export default {
 .benefit-card h3 {
   margin-bottom: 0.5rem;
   color: #1a365d;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal h2 {
+  color: #2d3748;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.modal p {
+  color: #4a5568;
+  margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.action-button.primary {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.action-button.primary:hover {
+  background-color: #3e8e41;
+}
+
+.action-button.secondary {
+  background-color: #3182ce;
+  color: white;
+}
+
+.action-button.secondary:hover {
+  background-color: #2c5282;
+}
+
+.action-button.guest {
+  background-color: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  cursor: pointer;
+}
+
+.action-button.guest:hover {
+  background-color: #cbd5e0;
 }
 </style>

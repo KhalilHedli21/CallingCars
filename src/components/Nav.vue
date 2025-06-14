@@ -30,8 +30,8 @@
         </template>
         
         <!-- Navigation Client -->
-        <template v-if="isLoggedIn && currentUserRole === 'client'">
-          <li><router-link to="/order" @click="closeMobileMenu">Commander une voiture</router-link></li>
+        <template v-if="isLoggedIn && currentUserRole === 'user'">
+          <li><router-link to="/home" @click="closeMobileMenu">Commander une voiture</router-link></li>
           <li><router-link to="/profile" @click="closeMobileMenu">Profil</router-link></li>
           <li><a href="#" @click.prevent="handleLogout" class="logout-button">Se déconnecter</a></li>
         </template>

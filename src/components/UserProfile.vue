@@ -2,7 +2,6 @@
   <div class="profile-container">
     <div class="profile-header">
       <div class="profile-avatar">
-        <img :src="user.avatar || '/default-avatar.png'" alt="Profile Avatar">
         <button class="edit-avatar" @click="handleEditAvatar">
           <i class="fas fa-camera"></i>
         </button>
@@ -12,96 +11,31 @@
         <p class="user-email">{{ user.email }}</p>
         <div class="profile-stats">
           <div class="stat">
-            <span class="stat-value">{{ favorites.length }}</span>
-            <span class="stat-label">Favorites</span>
-          </div>
-          <div class="stat">
-            <span class="stat-value">{{ listings.length }}</span>
-            <span class="stat-label">Listings</span>
-          </div>
-          <div class="stat">
-            <span class="stat-value">{{ reviews.length }}</span>
-            <span class="stat-label">Reviews</span>
+            <span class="stat-value">{{ orders.length }}</span>
+            <span class="stat-label">Commandes</span>
           </div>
         </div>
       </div>
       <button class="edit-profile-btn" @click="handleEditProfile">
         <i class="fas fa-edit"></i>
-        Edit Profile
+        Modifier le profil
       </button>
     </div>
 
     <div class="profile-content">
       <div class="profile-section">
         <div class="section-header">
-          <h2>My Favorites</h2>
-          <button class="view-all-btn" @click="viewAllFavorites">View All</button>
+          <h2>Mes commandes</h2>
         </div>
-        <div class="favorites-grid">
-          <div v-for="car in favorites.slice(0, 4)" :key="car.id" class="car-card">
-            <img :src="car.image" :alt="`${car.make} ${car.model}`">
-            <div class="car-info">
-              <h3>{{ car.make }} {{ car.model }}</h3>
-              <p class="car-price">${{ car.price.toLocaleString() }}</p>
-              <div class="car-details">
-                <span><i class="fas fa-calendar"></i> {{ car.year }}</span>
-                <span><i class="fas fa-road"></i> {{ car.mileage.toLocaleString() }} km</span>
+        <div class="orders-list">
+          <div v-for="order in orders" :key="order.id" class="order-card">
+            <div class="order-info">
+              <h3>{{ order.car.make }} {{ order.car.model }}</h3>
+              <p class="order-date">Commande du: {{ formatDate(order.created_at) }}</p>
+              <div class="order-status" :class="order.status">
+                {{ order.status }}
               </div>
             </div>
-            <button class="remove-favorite" @click="removeFavorite(car.id)">
-              <i class="fas fa-heart"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="profile-section">
-        <div class="section-header">
-          <h2>My Listings</h2>
-          <button class="view-all-btn" @click="viewAllListings">View All</button>
-        </div>
-        <div class="listings-grid">
-          <div v-for="listing in listings.slice(0, 4)" :key="listing.id" class="listing-card">
-            <img :src="listing.image" :alt="`${listing.make} ${listing.model}`">
-            <div class="listing-info">
-              <h3>{{ listing.make }} {{ listing.model }}</h3>
-              <p class="listing-price">${{ listing.price.toLocaleString() }}</p>
-              <div class="listing-status" :class="listing.status">
-                {{ listing.status }}
-              </div>
-            </div>
-            <div class="listing-actions">
-              <button class="edit-listing" @click="editListing(listing.id)">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="delete-listing" @click="deleteListing(listing.id)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="profile-section">
-        <div class="section-header">
-          <h2>Recent Reviews</h2>
-          <button class="view-all-btn" @click="viewAllReviews">View All</button>
-        </div>
-        <div class="reviews-list">
-          <div v-for="review in reviews.slice(0, 3)" :key="review.id" class="review-card">
-            <div class="review-header">
-              <img :src="review.carImage" :alt="review.carName">
-              <div class="review-info">
-                <h3>{{ review.carName }}</h3>
-                <div class="rating">
-                  <i v-for="n in 5" :key="n" 
-                     :class="['fas', 'fa-star', { 'active': n <= review.rating }]">
-                  </i>
-                </div>
-              </div>
-              <span class="review-date">{{ formatDate(review.date) }}</span>
-            </div>
-            <p class="review-text">{{ review.text }}</p>
           </div>
         </div>
       </div>
@@ -111,6 +45,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import axios from 'axios'
 
 interface User {
   name: string;
@@ -141,107 +76,77 @@ interface Review {
   date: string;
 }
 
+interface Order {
+  id: number;
+  car: Car;
+  status: string;
+  created_at: string;
+}
+
 export default defineComponent({
   name: 'UserProfile',
   data() {
     return {
       user: {
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        avatar: ''
-      } as User,
-      favorites: [] as Car[],
-      listings: [] as Listing[],
-      reviews: [] as Review[]
+        name: '',
+        email: '',
+      },
+      orders: [] as Order[]
     }
   },
   methods: {
+    async fetchUserProfile() {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          this.$router.push('/login')
+          return
+        }
+
+        const response = await axios.get('http://localhost:8000/api/user', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        this.user = response.data
+        await this.fetchUserOrders()
+      } catch (error) {
+        console.error('Error fetching user profile:', error)
+        alert('Erreur lors du chargement du profil')
+      }
+    },
+    async fetchUserOrders() {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get('http://localhost:8000/api/orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        this.orders = response.data
+      } catch (error) {
+        console.error('Error fetching user orders:', error)
+      }
+    },
     handleEditAvatar() {
       // Implement avatar edit functionality
       console.log('Edit avatar')
     },
     handleEditProfile() {
-      // Implement profile edit functionality
-      console.log('Edit profile')
-    },
-    viewAllFavorites() {
-      // Navigate to favorites page
-      console.log('View all favorites')
-    },
-    viewAllListings() {
-      // Navigate to listings page
-      console.log('View all listings')
-    },
-    viewAllReviews() {
-      // Navigate to reviews page
-      console.log('View all reviews')
-    },
-    removeFavorite(carId: number) {
-      // Implement remove favorite functionality
-      console.log('Remove favorite:', carId)
-    },
-    editListing(listingId: number) {
-      // Implement edit listing functionality
-      console.log('Edit listing:', listingId)
-    },
-    deleteListing(listingId: number) {
-      // Implement delete listing functionality
-      console.log('Delete listing:', listingId)
+      this.$router.push('/edit-profile')
     },
     formatDate(date: string): string {
-      return new Date(date).toLocaleDateString('en-US', {
+      return new Date(date).toLocaleDateString('fr-FR', {
         year: 'numeric',
-        month: 'short',
+        month: 'long',
         day: 'numeric'
       })
     }
   },
   async mounted() {
-    // Fetch user data, favorites, listings, and reviews
-    // This is where you would make API calls
-    try {
-      // Simulated data
-      this.favorites = [
-        {
-          id: 1,
-          make: 'Toyota',
-          model: 'Camry',
-          year: 2020,
-          price: 25000,
-          mileage: 15000,
-          image: '/car1.jpg'
-        },
-        // Add more favorites...
-      ]
-      
-      this.listings = [
-        {
-          id: 1,
-          make: 'Honda',
-          model: 'Civic',
-          year: 2019,
-          price: 20000,
-          mileage: 25000,
-          image: '/car2.jpg',
-          status: 'active'
-        },
-        // Add more listings...
-      ]
-      
-      this.reviews = [
-        {
-          id: 1,
-          carName: 'BMW 3 Series',
-          carImage: '/car3.jpg',
-          rating: 5,
-          text: 'Great car, excellent condition!',
-          date: '2024-03-15'
-        },
-        // Add more reviews...
-      ]
-    } catch (error) {
-      console.error('Error fetching profile data:', error)
-    }
+    this.fetchUserProfile()
   }
 })
 </script>
@@ -375,227 +280,50 @@ export default defineComponent({
   color: #1a365d;
 }
 
-.view-all-btn {
-  color: #4CAF50;
-  background: none;
-  border: none;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.view-all-btn:hover {
-  text-decoration: underline;
-}
-
-.favorites-grid,
-.listings-grid {
+.orders-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-}
-
-.car-card,
-.listing-card {
-  position: relative;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-}
-
-.car-card:hover,
-.listing-card:hover {
-  transform: translateY(-4px);
-}
-
-.car-card img,
-.listing-card img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-}
-
-.car-info,
-.listing-info {
-  padding: 1rem;
-}
-
-.car-info h3,
-.listing-info h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1a365d;
-  margin-bottom: 0.5rem;
-}
-
-.car-price,
-.listing-price {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #4CAF50;
-  margin-bottom: 0.5rem;
-}
-
-.car-details {
-  display: flex;
   gap: 1rem;
-  color: #6b7280;
-  font-size: 0.875rem;
 }
 
-.car-details span {
+.order-card {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.25rem;
 }
 
-.remove-favorite {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: white;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #ef4444;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s;
+.order-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
 }
 
-.remove-favorite:hover {
-  background: #ef4444;
-  color: white;
+.order-date {
+  color: #718096;
+  margin: 0;
 }
 
-.listing-status {
-  display: inline-block;
+.order-status {
   padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
+  border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-.listing-status.active {
-  background: #dcfce7;
-  color: #16a34a;
+.order-status.pending {
+  background-color: #FEF3C7;
+  color: #92400E;
 }
 
-.listing-status.pending {
-  background: #fef3c7;
-  color: #d97706;
+.order-status.confirmed {
+  background-color: #D1FAE5;
+  color: #065F46;
 }
 
-.listing-status.sold {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.listing-actions {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.edit-listing,
-.delete-listing {
-  background: white;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s;
-}
-
-.edit-listing {
-  color: #4CAF50;
-}
-
-.delete-listing {
-  color: #ef4444;
-}
-
-.edit-listing:hover {
-  background: #4CAF50;
-  color: white;
-}
-
-.delete-listing:hover {
-  background: #ef4444;
-  color: white;
-}
-
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.review-card {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.review-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.review-header img {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.review-info {
-  flex: 1;
-}
-
-.review-info h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1a365d;
-  margin-bottom: 0.25rem;
-}
-
-.rating {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.rating i {
-  color: #d1d5db;
-}
-
-.rating i.active {
-  color: #f59e0b;
-}
-
-.review-date {
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.review-text {
-  color: #4b5563;
-  line-height: 1.5;
+.order-status.cancelled {
+  background-color: #FEE2E2;
+  color: #991B1B;
 }
 
 @media (max-width: 768px) {
@@ -611,11 +339,6 @@ export default defineComponent({
   .edit-profile-btn {
     width: 100%;
     justify-content: center;
-  }
-
-  .favorites-grid,
-  .listings-grid {
-    grid-template-columns: 1fr;
   }
 }
 </style>

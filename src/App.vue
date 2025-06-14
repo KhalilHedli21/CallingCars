@@ -16,17 +16,19 @@
 
     <!-- Main Content -->
     <main role="main">
-      <transition name="slide-fade" mode="out-in">
-        <router-view
-          :key="$route.fullPath"
-          :user-type="userType"
-          @login="handleLogin"
-          @signup="handleSignup"
-          @show-signup="showSignup"
-          @explore="exploreAsGuest"
-          @error="handleError"
-        />
-      </transition>
+      <router-view v-slot="{ Component }">
+        <transition name="slide-fade" mode="out-in">
+          <component :is="Component" 
+            :key="$route.fullPath"
+            :user-type="userType"
+            @login="handleLogin"
+            @signup="handleSignup"
+            @show-signup="showSignup"
+            @explore="exploreAsGuest"
+            @error="handleError"
+          />
+        </transition>
+      </router-view>
     </main>
 
     <!-- Error Notification -->

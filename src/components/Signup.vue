@@ -110,8 +110,6 @@
           <span v-else>Créer un compte</span>
         </button>
 
-        <span class="error-message" v-if="errors.submit">{{ errors.submit }}</span>
-
         <div class="social-signup">
           <p>Ou inscrivez-vous avec</p>
           <div class="social-buttons">

@@ -141,7 +141,7 @@ export default {
           year: 2024,
           price: 4800000,
           mileage: 3000,
-          image: 'https://th.bing.com/th/id/R.5f4d56188f67694f39e956821344b6f4?rik=KTdp7JfYjbxLEw&pid=ImgRaw&r=0',
+          image: 'https://th.bing.com/th/id/R.3dcf2a531720a78cae6ddd8a16bc49ac?rik=%2fDdsFPJ9S1dCHQ&pid=ImgRaw&r=0',
           fuelType: 'Hybride',
           transmission: 'Automatique',
           description: 'Modern SUV with hybrid efficiency and bold styling.',
@@ -356,18 +356,13 @@ export default {
       }
     },
     orderCar(car) {
-      if (this.userType === 'guest') {
-        alert('Veuillez vous connecter pour commander une voiture');
-        this.$router.push('/login');
-        return;
-      }
-      this.$router.push({ 
-        name: 'OrderForm', 
-        params: { 
-          carId: car.id, 
-          make: car.make, 
-          model: car.model 
-        } 
+      this.$router.push({
+        name: 'order',
+        params: {
+          carId: car.id,
+          make: car.make,
+          model: car.model
+        }
       });
     }
   }

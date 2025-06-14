@@ -4,6 +4,7 @@ import Home from './components/Home.vue';
 import Login from './components/Login.vue';
 import Signup from './components/Signup.vue';
 import UserProfile from './components/UserProfile.vue';
+import EditProfile from './components/EditProfile.vue';
 import CarDetails from './components/CarDetails.vue';
 import Contact from './components/Contact.vue';
 import AdminDashboard from './components/Admin/AdminDashboard.vue';
@@ -12,6 +13,7 @@ import AdminCarManagement from './components/Admin/AdminCarManagment.vue';
 import AdminOrders from './components/Admin/AdminOrders.vue';
 import OrderForm from './components/OrderForm.vue';
 import AdminLayout from './components/Admin/AdminLayout.vue';
+import AdminCarForm from './components/Admin/AdminCarForm.vue';
 import axios from 'axios';
 
 const routes = [
@@ -21,9 +23,21 @@ const routes = [
     component: Landing,
   },
   {
-    path: '/order',
-    name: 'OrderForm',
+    path: '/cars',
+    name: 'Cars',
+    component: Home,
+  },
+  {
+    path: '/sell',
+    name: 'Sell',
+    component: () => import('./components/Admin/AdminCarForm.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/order/:carId/:make/:model',
+    name: 'order',
     component: OrderForm,
+    props: true,
     meta: { requiresAuth: true },
   },
   {
@@ -53,6 +67,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/edit-profile',
+    name: 'EditProfile',
+    component: EditProfile,
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/cars/:id',
     name: 'CarDetails',
     component: CarDetails,
@@ -78,6 +98,17 @@ const routes = [
         path: 'listings',
         name: 'AdminCarManagement',
         component: AdminCarManagement,
+      },
+      {
+        path: 'listings/add',
+        name: 'AdminCarAdd',
+        component: AdminCarForm,
+      },
+      {
+        path: 'listings/edit/:id',
+        name: 'AdminCarEdit',
+        component: AdminCarForm,
+        props: true,
       },
       {
         path: 'orders',
